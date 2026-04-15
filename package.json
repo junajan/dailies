@@ -1,0 +1,25 @@
+{
+  "name": "daily-summary",
+  "version": "0.1.0",
+  "description": "Morning stock-market news briefing. Cron pulls news, LLM summarises, browser speaks it.",
+  "private": true,
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "regenerate": "node server/cli.js",
+    "web:dev": "cd web && npm run dev",
+    "web:build": "cd web && npm run build",
+    "build": "npm --prefix web install && npm --prefix web run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "node-cron": "^3.0.3",
+    "openai": "^4.67.3"
+  }
+}

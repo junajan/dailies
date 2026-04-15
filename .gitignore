@@ -1,0 +1,9 @@
+node_modules/
+.env
+data/summaries/
+web/dist/
+web/node_modules/
+.DS_Store
+*.log
+.idea/
+.vscode/
