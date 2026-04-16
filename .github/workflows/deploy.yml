@@ -73,7 +73,8 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh -i ~/.ssh/id_deploy -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" bash --login -s <<REMOTE
+          ssh -i ~/.ssh/id_deploy -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" bash --login -i -s <<REMOTE
+          source ~/.bashrc 2>/dev/null || source ~/.profile 2>/dev/null || true
           set -eo pipefail
           cd "${DEPLOY_PATH}"
           if [ ! -f .env ]; then
