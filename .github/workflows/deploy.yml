@@ -73,9 +73,9 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh -i ~/.ssh/id_deploy -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" bash -se <<'REMOTE'
+          ssh -i ~/.ssh/id_deploy -p "${SSH_PORT:-22}" "$SSH_USER@$SSH_HOST" bash -se <<REMOTE
           set -euo pipefail
-          cd "$DEPLOY_PATH"
+          cd "${DEPLOY_PATH}"
           # `.env` is NOT pushed by rsync; it must already exist on the server.
           if [ ! -f .env ]; then
             echo "[deploy] warning: .env missing on server — app will not generate summaries"
