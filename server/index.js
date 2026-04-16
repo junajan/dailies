@@ -29,6 +29,27 @@ function timingSafeEquals(a, b) {
   return timingSafeEqual(bufA, bufB);
 }
 
+// --- Refresh rate limiter (2 manual refreshes per day) ------------------
+
+const DAILY_REFRESH_LIMIT = 2;
+const refreshState = { date: '', count: 0 };
+
+function getRefreshRemaining() {
+  const today = todayLocal();
+  if (refreshState.date !== today) {
+    refreshState.date = today;
+    refreshState.count = 0;
+  }
+  return DAILY_REFRESH_LIMIT - refreshState.count;
+}
+
+function consumeRefresh() {
+  getRefreshRemaining(); // ensures date is current
+  if (refreshState.count >= DAILY_REFRESH_LIMIT) return false;
+  refreshState.count++;
+  return true;
+}
+
 // --- API ----------------------------------------------------------------
 
 app.get('/api/today', async (_req, res) => {
@@ -59,6 +80,32 @@ app.post('/api/regenerate', async (req, res) => {
   } catch (err) {
     console.error('[api] /api/regenerate failed:', err);
     res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+app.get('/api/refresh-status', (_req, res) => {
+  res.json({ remaining: getRefreshRemaining(), limit: DAILY_REFRESH_LIMIT });
+});
+
+app.post('/api/refresh', async (_req, res) => {
+  if (!consumeRefresh()) {
+    return res.status(429).json({
+      error: `Daily refresh limit reached (${DAILY_REFRESH_LIMIT} per day)`,
+      remaining: 0,
+    });
+  }
+  try {
+    console.log(`[api] manual refresh triggered (${getRefreshRemaining()} remaining today)`);
+    const result = await runPipeline();
+    res.json({
+      ok: true,
+      date: result.date,
+      headlines: result.headlines.length,
+      remaining: getRefreshRemaining(),
+    });
+  } catch (err) {
+    console.error('[api] /api/refresh failed:', err);
+    res.status(500).json({ error: 'Internal error', remaining: getRefreshRemaining() });
   }
 });
 

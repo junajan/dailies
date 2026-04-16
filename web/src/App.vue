@@ -5,20 +5,54 @@ import PlayerCard from './components/PlayerCard.vue';
 const loading = ref(true);
 const error = ref(null);
 const summary = ref(null);
+const refreshRemaining = ref(null);
+const refreshing = ref(false);
+const refreshError = ref(null);
+
+async function loadSummary() {
+  const res = await fetch('/api/today', { cache: 'no-store' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+async function loadRefreshStatus() {
+  try {
+    const res = await fetch('/api/refresh-status');
+    if (res.ok) {
+      const data = await res.json();
+      refreshRemaining.value = data.remaining;
+    }
+  } catch { /* ignore */ }
+}
+
+async function refresh() {
+  refreshing.value = true;
+  refreshError.value = null;
+  try {
+    const res = await fetch('/api/refresh', { method: 'POST' });
+    const data = await res.json();
+    if (data.remaining != null) refreshRemaining.value = data.remaining;
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    summary.value = await loadSummary();
+  } catch (e) {
+    refreshError.value = e.message;
+  } finally {
+    refreshing.value = false;
+  }
+}
 
 onMounted(async () => {
   try {
-    const res = await fetch('/api/today', { cache: 'no-store' });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.error || `HTTP ${res.status}`);
-    }
-    summary.value = await res.json();
+    summary.value = await loadSummary();
   } catch (e) {
     error.value = e.message;
   } finally {
     loading.value = false;
   }
+  loadRefreshStatus();
 });
 
 const dateLabel = computed(() => {
@@ -66,6 +100,20 @@ const generatedLabel = computed(() => {
             <span class="source-name">· {{ s.source }}</span>
           </li>
         </ul>
+      </section>
+
+      <section class="refresh-section" v-if="refreshRemaining !== null">
+        <button
+          class="refresh-btn"
+          :disabled="refreshRemaining <= 0 || refreshing"
+          @click="refresh"
+        >
+          {{ refreshing ? 'Refreshing...' : 'Refresh news' }}
+        </button>
+        <div class="refresh-info">
+          {{ refreshRemaining }} refresh{{ refreshRemaining === 1 ? '' : 'es' }} remaining today
+        </div>
+        <div class="refresh-error" v-if="refreshError">{{ refreshError }}</div>
       </section>
 
       <footer class="footer">
@@ -151,6 +199,36 @@ h1 {
 .source-name {
   color: var(--muted);
   margin-left: 4px;
+}
+
+.refresh-section {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.refresh-btn {
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.refresh-btn:not(:disabled):hover { background: var(--border); }
+.refresh-btn:not(:disabled):active { transform: scale(0.97); }
+.refresh-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.refresh-info {
+  font-size: 12px;
+  color: var(--muted);
+}
+.refresh-error {
+  font-size: 13px;
+  color: #b91c1c;
+  text-align: center;
 }
 
 .footer {
