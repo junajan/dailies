@@ -10,28 +10,45 @@ export async function fetchArticles({ since, limit = 30 } = {}) {
     return [];
   }
 
-  const params = new URLSearchParams({
+  const tickers = (process.env.TICKERS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .join(',');
+
+  const baseParams = {
     api_token: key,
     language: 'en',
     filter_entities: 'true',
-    countries: 'us,gb,de,jp',
+    countries: 'us,gb,de,jp,kr,tw',
     limit: String(Math.min(limit, 100)),
     sort: 'published_desc',
-  });
+    industries: 'Technology,Financial,Energy,Healthcare',
+  };
   if (since instanceof Date) {
-    params.set('published_after', since.toISOString().slice(0, 19));
+    baseParams.published_after = since.toISOString().slice(0, 19);
   }
 
-  const url = `${BASE}?${params.toString()}`;
-  let json;
-  try {
-    json = await fetchJson(url);
-  } catch (err) {
-    console.error(`[${SOURCE}] fetch failed:`, err.message);
-    return [];
+  // Two parallel calls: general tech/finance + watchlist-specific
+  const calls = [
+    fetchJson(`${BASE}?${new URLSearchParams(baseParams).toString()}`),
+  ];
+  if (tickers) {
+    calls.push(
+      fetchJson(`${BASE}?${new URLSearchParams({ ...baseParams, symbols: tickers }).toString()}`)
+    );
   }
 
-  const items = Array.isArray(json?.data) ? json.data : [];
+  const results = await Promise.allSettled(calls);
+  const items = [];
+  for (const r of results) {
+    if (r.status === 'fulfilled' && Array.isArray(r.value?.data)) {
+      items.push(...r.value.data);
+    } else if (r.status === 'rejected') {
+      console.error(`[${SOURCE}] fetch failed:`, r.reason?.message);
+    }
+  }
+
   return items.map(raw => normalise(raw)).filter(Boolean);
 }
 

@@ -10,24 +10,28 @@ export async function fetchArticles({ since, limit = 30 } = {}) {
     return [];
   }
 
-  const params = new URLSearchParams({
+  const baseParams = {
     apikey: key,
-    category: 'business',
     language: 'en',
-    // prefer finance-heavy regions
     country: 'us,gb,de,jp',
-  });
+  };
 
-  const url = `${BASE}?${params.toString()}`;
-  let json;
-  try {
-    json = await fetchJson(url);
-  } catch (err) {
-    console.error(`[${SOURCE}] fetch failed:`, err.message);
-    return [];
+  // Two parallel calls: business + technology to cover both financial and tech news
+  const calls = [
+    fetchJson(`${BASE}?${new URLSearchParams({ ...baseParams, category: 'business' }).toString()}`),
+    fetchJson(`${BASE}?${new URLSearchParams({ ...baseParams, category: 'technology' }).toString()}`),
+  ];
+
+  const results = await Promise.allSettled(calls);
+  const items = [];
+  for (const r of results) {
+    if (r.status === 'fulfilled' && Array.isArray(r.value?.results)) {
+      items.push(...r.value.results);
+    } else if (r.status === 'rejected') {
+      console.error(`[${SOURCE}] fetch failed:`, r.reason?.message);
+    }
   }
 
-  const items = Array.isArray(json?.results) ? json.results : [];
   const sinceMs = since instanceof Date ? since.getTime() : Date.now() - 24 * 3600 * 1000;
 
   return items
