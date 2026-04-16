@@ -10,10 +10,19 @@ const FINANCE_SOURCES = new Set([
 
 // Mega-cap tickers get an extra bonus on top of the watchlist match.
 const MEGA_CAP = new Set([
+  // Big tech & mega-cap
   'AAPL', 'MSFT', 'NVDA', 'GOOGL', 'GOOG', 'AMZN', 'META', 'TSLA',
   'BRK.B', 'BRK.A', 'AVGO', 'TSM', 'V', 'MA', 'JPM',
   'UNH', 'XOM', 'JNJ', 'WMT', 'ORCL', 'NFLX', 'ADBE', 'CRM',
   'AMD', 'INTC', 'ASML', 'QCOM', 'AMAT',
+  // Cloud / cybersecurity / infra
+  'NET',
+  // Key indices & ETFs
+  'QQQ', 'QTUM', 'SPY', 'VIX',
+  // Industrials & consumer
+  'COST', 'CAT',
+  // Critical minerals & rare earths
+  'UUUU', 'USAR', 'MP', 'SQM',
 ]);
 
 export function rankArticles(articles, { tickers = [] } = {}) {
@@ -98,6 +107,8 @@ function score(a, watched) {
     'llm', 'chip', 'semiconductor', 'data center', 'cloud computing',
     'autonomous', 'self-driving', 'robotics', 'quantum computing',
     'cybersecurity', 'ev battery', 'electric vehicle',
+    'rare earth', 'critical mineral', 'lithium', 'uranium',
+    'tech ipo', 'new listing',
   ].filter(k => text.includes(k)).length;
   s += Math.min(techHits, 3) * 2;
 
