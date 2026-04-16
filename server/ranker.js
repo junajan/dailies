@@ -97,16 +97,29 @@ function score(a, watched) {
     'apple', 'microsoft', 'nvidia', 'google', 'alphabet', 'amazon', 'meta',
     'tesla', 'broadcom', 'tsmc', 'samsung', 'openai', 'anthropic',
     'oracle', 'salesforce', 'adobe', 'netflix', 'amd', 'intel', 'qualcomm',
-    'asml', 'arm holdings',
+    'asml', 'arm holdings', 'cloudflare', 'palantir', 'databricks',
+    'ionq', 'rigetti', 'ibm quantum', 'd-wave',
+    'nextera energy', 'enphase', 'first solar', 'cameco',
   ].filter(n => text.includes(n)).length;
   s += Math.min(techNameHits, 4) * 2;
 
   // Tech development keywords
   const techHits = [
+    // AI
     'artificial intelligence', ' ai ', 'machine learning', 'large language model',
-    'llm', 'chip', 'semiconductor', 'data center', 'cloud computing',
-    'autonomous', 'self-driving', 'robotics', 'quantum computing',
-    'cybersecurity', 'ev battery', 'electric vehicle',
+    'llm', 'generative ai', 'gpt', 'chatbot', 'deep learning', 'neural network',
+    'ai chip', 'ai model', 'ai agent', 'copilot', 'diffusion model',
+    // Quantum computing
+    'quantum computing', 'quantum computer', 'qubit', 'quantum processor',
+    'quantum supremacy', 'quantum advantage', 'ionq', 'rigetti', 'ibm quantum',
+    // Energy
+    'nuclear energy', 'nuclear power', 'solar energy', 'wind energy', 'renewables',
+    'energy storage', 'battery', 'power grid', 'natural gas', 'lng', 'oil price',
+    'opec', 'energy transition', 'green hydrogen', 'fusion energy', 'small modular reactor',
+    // Semiconductors & hardware
+    'chip', 'semiconductor', 'data center', 'cloud computing', 'foundry', 'gpu', 'tpu',
+    // Other tech
+    'autonomous', 'self-driving', 'robotics', 'cybersecurity', 'ev battery', 'electric vehicle',
     'rare earth', 'critical mineral', 'lithium', 'uranium',
     'tech ipo', 'new listing',
   ].filter(k => text.includes(k)).length;
