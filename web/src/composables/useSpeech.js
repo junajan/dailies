@@ -156,7 +156,7 @@ export function useSpeech() {
     u.pitch = 1.0;
 
     u.onend = () => {
-      if (stopping) return;
+      if (stopping || isPaused.value) return;
       queueIndex += 1;
       progress.value = queueIndex / queue.length;
       speakNext();
@@ -198,12 +198,13 @@ export function useSpeech() {
 
   function pause() {
     if (!supported || !isSpeaking.value || isPaused.value) return;
-    // Cancel current speech but keep queue + queueIndex so we can resume
+    // Set paused BEFORE cancel — Chrome fires onend asynchronously after
+    // cancel(), and the onend handler checks isPaused to avoid restarting.
+    isPaused.value = true;
     stopping = true;
     try { window.speechSynthesis.cancel(); } catch { /* ignore */ }
     stopping = false;
     currentUtterance = null;
-    isPaused.value = true;
   }
 
   function resume() {
