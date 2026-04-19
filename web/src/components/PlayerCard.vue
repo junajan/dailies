@@ -50,10 +50,6 @@ const pct = computed(() => Math.round(speech.progress.value * 100));
       <div class="progress-text">{{ pct }}%</div>
     </div>
 
-    <div class="controls" v-if="speech.isSpeaking.value">
-      <button class="ghost" @click="speech.stop()">Stop</button>
-    </div>
-
     <div class="voice-row" v-if="speech.englishVoices.value.length > 0">
       <label for="voice">Voice</label>
       <select
@@ -141,19 +137,6 @@ const pct = computed(() => Math.round(speech.progress.value * 100));
   top: -6px;
   font-size: 12px;
   color: var(--muted);
-}
-
-.controls {
-  display: flex;
-  gap: 8px;
-}
-.ghost {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 13px;
 }
 
 .voice-row {
