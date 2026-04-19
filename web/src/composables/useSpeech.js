@@ -109,10 +109,15 @@ export function useSpeech() {
   }
 
   // --- Playback ---
+  // We do NOT use speechSynthesis.pause()/resume() because they are broken
+  // in most browsers (Chrome kills paused utterances after ~15s, mobile
+  // browsers often ignore resume entirely). Instead we cancel on pause and
+  // restart from the saved chunk index on resume.
   let queue = [];
   let queueIndex = 0;
   let currentUtterance = null;
   let stopping = false;
+  let lastText = '';
 
   function reset() {
     stopping = false;
@@ -123,11 +128,19 @@ export function useSpeech() {
     isPaused.value = false;
     progress.value = 0;
     error.value = null;
+    lastText = '';
   }
 
   function speakNext() {
     if (stopping || queueIndex >= queue.length) {
-      reset();
+      if (!stopping) {
+        // Finished naturally — full reset
+        isSpeaking.value = false;
+        isPaused.value = false;
+        progress.value = 1;
+      }
+      stopping = false;
+      currentUtterance = null;
       return;
     }
     const chunk = queue[queueIndex];
@@ -149,7 +162,7 @@ export function useSpeech() {
       speakNext();
     };
     u.onerror = e => {
-      // Safari fires 'canceled' on stop — not a real error
+      // Safari fires 'canceled' on stop/pause — not a real error
       if (e.error === 'canceled' || e.error === 'interrupted') return;
       console.warn('[speech] error:', e.error);
       error.value = e.error || 'speech error';
@@ -165,10 +178,11 @@ export function useSpeech() {
       error.value = 'Speech synthesis not supported in this browser';
       return;
     }
-    stop(); // cancel any in-flight speech
+    cancelSpeech(); // cancel any in-flight speech
 
     // iOS requires the first speak() to happen inside a user gesture — play() is
     // expected to be called from a click handler, so we just proceed directly.
+    lastText = text;
     queue = chunkText(text);
     if (!queue.length) {
       error.value = 'Nothing to speak';
@@ -183,22 +197,40 @@ export function useSpeech() {
   }
 
   function pause() {
-    if (!supported || !isSpeaking.value) return;
-    window.speechSynthesis.pause();
+    if (!supported || !isSpeaking.value || isPaused.value) return;
+    // Cancel current speech but keep queue + queueIndex so we can resume
+    stopping = true;
+    try { window.speechSynthesis.cancel(); } catch { /* ignore */ }
+    stopping = false;
+    currentUtterance = null;
     isPaused.value = true;
   }
 
   function resume() {
     if (!supported || !isPaused.value) return;
-    window.speechSynthesis.resume();
+    // Restart from the saved chunk index
     isPaused.value = false;
+    error.value = null;
+    speakNext();
   }
 
-  function stop() {
+  function cancelSpeech() {
     if (!supported) return;
     stopping = true;
     try { window.speechSynthesis.cancel(); } catch { /* ignore */ }
-    reset();
+    stopping = false;
+    currentUtterance = null;
+  }
+
+  function stop() {
+    cancelSpeech();
+    queue = [];
+    queueIndex = 0;
+    isSpeaking.value = false;
+    isPaused.value = false;
+    progress.value = 0;
+    error.value = null;
+    lastText = '';
   }
 
   onUnmounted(() => {
